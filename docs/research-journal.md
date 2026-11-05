@@ -315,7 +315,8 @@ Mem: 15Gi total, ~6.7Gi available   # system RAM, not VRAM
 ```
 
 On Linux, CUDA does not spill into system RAM by default. Running out of VRAM
-gives a "CUDA out of memory" error.
+gives a "CUDA out of memory" error. (Refined in Entry 14: explicit offloading
+techniques can move some training state to RAM.)
 
 **Open**: estimate the memory needed for full fine-tuning of a 278M model
 (weights, gradients, optimizer state, activations), and whether it fits in
@@ -444,6 +445,110 @@ asked what each experiment is for, plus materials.
 
 ---
 
+## Entry 14 — Session 1 (2026-10-30/31): Does offloading remove the 6 GB limit?
+
+> **Query 18:** "Does that say VRAM having 6GB is not the point that I can run bigger models?" (asked after pasting an explanation of Ollama/llama.cpp partial offloading from another session, which said that running a model is limited by VRAM + RAM combined, at a speed cost)
+
+**My reasoning.** Ollama runs models larger than 6 GB by keeping some layers in
+system RAM (partial offloading). So maybe 6 GB of VRAM isn't really the limit.
+
+**Review.**
+- **Correct for inference with Ollama**: llama.cpp splits layers between GPU
+  and CPU. VRAM + RAM together is the capacity limit, and speed drops with the
+  share of the model that sits on the CPU.
+- **Self-correction by the AI**: Entry 9 says "training has to fit in 6 GB".
+  That holds for plain PyTorch, which doesn't spill into RAM by default. It is
+  not true in general: explicit offloading for *training* exists. ZeRO-Offload
+  keeps optimizer states and gradients in CPU RAM and runs the optimizer step
+  on the CPU.
+- **Fact**: Ollama only runs models (inference). It cannot train or fine-tune
+  the embedding model. Fine-tuning happens in PyTorch / sentence-transformers.
+
+**Outcome.** **Open**: do the inference-offloading argument and its costs carry
+over to training? Hint: list what a training step does to every parameter that
+a generation step doesn't, then estimate what would cross the CPU–GPU link per
+step if those parts lived in RAM. Readings: ZeRO-Offload (arXiv:2101.06840),
+abstract and §3–4; DeepSpeed "ZeRO-Offload" tutorial
+(https://www.deepspeed.ai/tutorials/zero-offload/). Then decide whether a 278M
+model needs offloading at all once activations are estimated (Entry 12).
+
+> **Query 19** (2026-11-05, Session 2): "continue"
+
+**Follow-up.** No answer was given yet, so the question was split into a
+smaller first step: of the 18 bytes/param from Entry 12, which bytes does
+Ollama's text generation actually need, and which exist only during training?
+
+---
+
+## Entry 15 — Session 2 (2026-11-05): Supervision setup
+
+> **Query 20:** "supervise me on my building Kazakh RAG like a mentee."
+
+> **Query 21:** "DUE dates: 1) I estimate this question costs around an hour or 30 minutes of search. So, today? 2) Tokenizers may need an 3-4 hours of work. So it is two days from now or till Nov 8 3) Evaluation may require 5-6 hours that is from the deadline of tokenizer 8 - to 12nd Nov 4) Embeddings: maybe 5-6 hours till 16th of Nov . I think I can realistically give the project about 14 hours a week. It does not line up with internship deadlines I must have solid end to end project by the end of the mid december."
+
+**Supervisor's status review (as of Query 20).**
+- 20 queries, 14 entries, 0 lines of code, 0 open questions closed.
+- Decisions were made on weak criteria and sent back more than once: the
+  license (Entry 8) and the file size (Entry 11).
+- Several checkpoints were answered with a topic switch or "continue" instead
+  of an answer (Entries 3, 4, 14).
+- Readings were assigned but have not been confirmed as read.
+
+**Proposed supervision structure** (AI proposal, awaiting my confirmation):
+- *Roles.* I am the researcher: I own the decisions and write the code. The
+  AI is the supervisor: it assigns readings, reviews my work, pushes back,
+  tracks deadlines and runs recall questions.
+- *Meetings.* Each session starts with:
+  - a status check: done / blocked / next;
+  - one recall question;
+  - a review of what I produced.
+  Each session ends with action items and due dates that I set myself,
+  recorded under "Action items" below.
+- *Closing a question.* An open question is closed only by my written answer
+  in this journal. When I switch topics, the supervisor names which open
+  questions block the new topic.
+- *Milestones* (proposed order; I set the dates):
+  - M0: foundations. Tokenizers, embeddings, IR evaluation.
+  - M1: data loaded, an evaluation script and one baseline, all on the
+    validation split.
+  - M2: the candidate models, run on the same protocol.
+  - M3: the replication check.
+  - M4: fine-tuning.
+  - M5: significance tests, then one run on the test split.
+  - M6: deployment.
+  - M7 (optional): generation layer.
+
+**Outcome.** **Decided**: structure confirmed (2026-11-05).
+- M1 target: "Maybe under a month", i.e. by about 2026-12-05. **Open**: the
+  exact date and the reason for it.
+- Weekly hours: about 14.
+- Hard goal: a "solid end-to-end project by mid-December" (about 2026-12-15).
+  It is not tied to internship deadlines.
+- Supervisor note: M0 ends 2026-11-16. That leaves about 4 weeks × 14 h ≈
+  58 h for M1–M6. **Open**: which milestones "end-to-end by mid-December"
+  includes, and an hour budget for each.
+
+> **Query 22:** "Okay maybe I did exaggerate. Not end to end full project. But at least MVP with real numbers to showcase the internship employers"
+
+- Revised goal: an **MVP with real numbers** by mid-December, to show
+  internship employers. The full project comes later.
+- **Open**: what the MVP contains (which milestones, which numbers against
+  which baselines, whether it is deployed), with an hour budget that fits in
+  about 58 h.
+
+## Action items
+
+M0 tasks proposed by the supervisor on 2026-11-05. I set the due dates.
+
+| # | Item | Owner | Due | Status |
+|---|---|---|---|---|
+| 1 | Answer the small step in Entry 14: which of the 18 B/param generation needs, which exist only for training, and why that makes generation easier to offload | me | 2026-11-05 (est. 0.5–1 h) | open |
+| 2 | Tokenizer readings (HF course ch. 6 §1, §5; Karpathy, first 30 min; Petrov 2023), then run the tokenizer experiment and write up what (a) and (b) in Entry 13 mean for this project | me | 2026-11-08 (est. 3–4 h) | open |
+| 3 | IR evaluation: Manning et al. ch. 8. Write which metric decides "better" for v1, and why (Entry 3) | me | 2026-11-12 (est. 5–6 h) | open |
+| 4 | Embedding readings (Boykis, Alammar, SBERT semantic search), then the index-size calculation (Entry 13) | me | 2026-11-16 (est. 5–6 h) | open |
+
+---
+
 ## Open questions (consolidated)
 
 - [ ] Language scope: stage-by-stage analysis, plus the tokenizer experiment.
@@ -454,6 +559,7 @@ asked what each experiment is for, plus materials.
 - [ ] Base model choice, with evidence other than the license or file size (Entry 11).
 - [ ] Training memory estimate including activations, then a measurement (Entry 12).
 - [ ] Tokenizer experiment and what it means for this project (Entry 13).
+- [ ] Does offloading help training here, and at what cost (Entry 14)?
 - [ ] Index size: 800k passages × embedding dimension × float32.
 - [ ] Deployment target.
 
@@ -478,10 +584,11 @@ asked what each experiment is for, plus materials.
 - Alammar, J. The Illustrated Word2vec. https://jalammar.github.io/illustrated-word2vec/
 - Reimers & Gurevych. Sentence-Transformers docs, Semantic search. https://sbert.net
 - Douze et al. 2024. The Faiss library. arXiv:2401.08281
+- Ren et al. 2021. ZeRO-Offload: Democratizing Billion-Scale Model Training. arXiv:2101.06840
 
 ## Query log
 
-Every query to the AI assistant, in order. Q16 is quoted only here because of its length.
+Every query to the AI assistant, in order. Q16 is quoted only here because of its length. Pasted material from other sessions is summarised, not quoted.
 
 1. (Entry 0) "we are building triangular RAG pipeline that at the end of the project must be real deployed system. That should showcase my understanding of ML/AI, Math, and MLOps. Before anything lets go to the trilingual_rag folder"
 2. (Entry 0) "On top of that I must understand every system design, decision and every math and concepts. If I dont know something AI should not tell the answer, but propose the readings and I should deduce the solution if not AI sends back or hints a bit"
@@ -500,3 +607,8 @@ Every query to the AI assistant, in order. Q16 is quoted only here because of it
 15. (Entry 10) "Write down this reasonning of mine with your corrections summarized as scientific experiment or journal inside some md file in the repo folder"
 16. (Entry 11, 12, 13) "1) I will choose Granite model. Because it is lightweight ~0.5 GB, compared to other models. Which leaves more VRAM for training. 2) According to my relative calculations Granite must fit inside 6 GB VRAM. From my HF readding tensors are stored in the model fp16 for each param for backward/forward pass, fp32 for each param to hold the weight values, which is 6 bytes per param => 1.54 GB. Next is optimizer. Because I could not find what optimizer Granite used I estimate it using Adam optimizer. Essentially, adam optimizer stores 8 bytes per parameter, which is 2.05 GB. Next is gradients, I took it as in HF too which is 4 bytes per param or 1.03GB. That builds up to 4.62GB. Next is spike estimation, I could not figure out how to calculate it so I used the relative calculation using the values from HF. In the HF memory allocation it says that using 85 GB memory is enough for running 4B parameter model. That 4B paramter model without spike have 67GB space allocation. That means 18GB is reserved for potential spikes. Now we divide 67GB / 85GB = 4.62GB / x => x = 5.86GB. That means we can safely reserve 1.24GB for spikes. But my GPU have 6GB of space, so it is enough to train the Granite in my system. 3) I am not familiar with tokenizer and index experiments. I am completely noob in this field and doing this project to learn, so could you pin point such stakes and give me material to read and learn."
 17. (Entry 10) "Have you written this reasonning in the md file? Write every entry and query to you"
+18. (Entry 14) "Does that say VRAM having 6GB is not the point that I can run bigger models?" (asked after pasting an explanation of Ollama/llama.cpp partial offloading from another session, which said that running a model is limited by VRAM + RAM combined, at a speed cost)
+19. (Entry 14) "continue"
+20. (Entry 15) "supervise me on my building Kazakh RAG like a mentee."
+21. (Entry 15) "DUE dates: 1) I estimate this question costs around an hour or 30 minutes of search. So, today? 2) Tokenizers may need an 3-4 hours of work. So it is two days from now or till Nov 8 3) Evaluation may require 5-6 hours that is from the deadline of tokenizer 8 - to 12nd Nov 4) Embeddings: maybe 5-6 hours till 16th of Nov . I think I can realistically give the project about 14 hours a week. It does not line up with internship deadlines I must have solid end to end project by the end of the mid december."
+22. (Entry 15) "Okay maybe I did exaggerate. Not end to end full project. But at least MVP with real numbers to showcase the internship employers"

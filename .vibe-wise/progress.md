@@ -31,11 +31,16 @@ Rules (shown to the learner):
 - Demonstrated: 18 B/param for model states.
 - Sent back: the spike estimate scaled by params; activations depend on batch/seq/depth/hidden. GiB vs GB. Margin too thin.
 
+## Offloading (side question)
+- Learner pasted another session's explanation of Ollama partial offloading and asked if 6 GB VRAM is therefore not a limit. Credited: correct for inference. AI corrected its own overstatement ("training must fit in 6 GB"): ZeRO-Offload exists. Fact given: Ollama can't train. Left to the learner: whether the offloading argument transfers to training (hint: what a training step does to every param; traffic over the link). Readings: ZeRO-Offload arXiv 2101.06840, DeepSpeed tutorial.
+
 ## Base model
 - Qwen3 dropped (size class). Granite chosen first "because CC BY-SA" (corrected), then "because lightweight 0.5 GB" (sent back: same 278M params, only the F16 vs F32 file differs).
 
 ## Pending decision
+Supervision structure CONFIRMED 2026-11-05 (journal Entry 15). M1 target "maybe under a month" (about 2026-12-05; no reason given). M0 due dates set by the learner: item 1 2026-11-05, item 2 11-08, item 3 11-12, item 4 11-16. About 14 h/week. Goal: solid end-to-end project by about 2026-12-15. Revised 2026-11-05: goal is now an MVP with real numbers by mid-Dec, for employers (not the full project). Awaiting: MVP contents (milestones, numbers vs baselines, deployed or not), and an hour budget for each (about 58 h available after M0); item 1 answer (due today).
+Previous decision still pending underneath:
 Decision: Base model choice and training memory, second attempt
 Stage: awaiting reasoning
 Asked: (1) choose a base model among the four 278M candidates with a reason that holds when training memory is identical; (2) redo the memory estimate with activations (which settings drive it; values that fit in 6 GiB), then measure with torch.cuda.max_memory_allocated.
-Also open: the tokenizer experiment and index-size calculation (readings in journal Entry 13); split usage; metric/baselines; replication protocol; deployment target.
+Also open: whether offloading transfers to training (journal Entry 14). 2026-11-05: learner said "continue" without answering; AI split it into a smaller step (which of the 18 B/param generation needs vs training only), which also serves as the overdue recall for the 18 B/param concept. Also open: the tokenizer experiment and index-size calculation (readings in journal Entry 13); split usage; metric/baselines; replication protocol; deployment target.

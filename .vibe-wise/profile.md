@@ -24,6 +24,7 @@ Implementation style: More hands-on (learner writes most code, AI reviews)
 Teaching style (learner requirement): learner must understand every design decision, every math concept and every other concept. When the learner doesn't know something, AI does not give the answer. AI suggests readings, the learner works out the solution, and if they're wrong AI sends it back or gives a small hint (escalating gradually).
 Active recall (learner requirement): quiz demonstrated concepts lightly at spaced intervals; a wrong answer brings it back sooner (see progress.md '## Review queue').
 Journal (learner requirement): after every exchange, update docs/research-journal.md. Each entry quotes the learner's queries verbatim (also listed in the Query log), with the learner's reasoning, evidence, corrections and outcome.
+Supervision mode (requested 2026-11-05): learner asked to be supervised "like a mentee". The proposed structure (journal Entry 15: roles, meeting format, closing rule, milestones M0-M7, Action items table) was confirmed on 2026-11-05. Each session runs as a meeting: status -> one recall question -> review -> action items with learner-set due dates (journal 'Action items' table).
 Agreed exceptions: plain facts that can't be deduced (syntax, flags, versions, prices) are stated with sources; bugs are flagged with where to look, not the fix, except security/data-loss risks.
 
 ## Strong Concepts
